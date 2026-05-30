@@ -3,13 +3,12 @@
     "step": {
       "user": {
         "title": "Sunbank",
-        "description": "Connect Home Assistant to your Sunbank account. Paste the API key from your Sunbank dashboard (Settings → API key).",
+        "description": "Connect Home Assistant to your Sunbank account. Data is sent in real time as your sensors change — there's nothing to schedule. Paste the API key from your Sunbank dashboard (Settings → Account).",
         "data": {
           "base_url": "Sunbank server URL",
           "api_key": "API key",
           "site": "Site key",
-          "source": "Source name",
-          "interval": "Push interval (seconds)"
+          "source": "Source name"
         }
       }
     },

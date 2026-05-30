@@ -11,4 +11,5 @@ CONF_INTERVAL = "interval"
 DEFAULT_BASE_URL = "http://localhost:8137"
 DEFAULT_SITE = "home"
 DEFAULT_SOURCE = "home_assistant"
-DEFAULT_INTERVAL = 60  # seconds between pushes
+# Real-time changes flow via HA state-change events; this is just the heartbeat keep-alive interval.
+DEFAULT_INTERVAL = 300

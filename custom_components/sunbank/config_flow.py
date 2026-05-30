@@ -7,8 +7,8 @@ from homeassistant import config_entries
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
-    CONF_API_KEY, CONF_BASE_URL, CONF_INTERVAL, CONF_SITE, CONF_SOURCE,
-    DEFAULT_BASE_URL, DEFAULT_INTERVAL, DEFAULT_SITE, DEFAULT_SOURCE, DOMAIN,
+    CONF_API_KEY, CONF_BASE_URL, CONF_SITE, CONF_SOURCE,
+    DEFAULT_BASE_URL, DEFAULT_SITE, DEFAULT_SOURCE, DOMAIN,
 )
 
 
@@ -41,11 +41,12 @@ class SunbankConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_create_entry(title="Sunbank", data=user_input)
 
+        # No push-interval field: data flows in real time via state-change events, so there's
+        # nothing to tune. (A slow heartbeat keep-alive is handled internally.)
         schema = vol.Schema({
             vol.Required(CONF_BASE_URL, default=DEFAULT_BASE_URL): str,
             vol.Required(CONF_API_KEY): str,
             vol.Optional(CONF_SITE, default=DEFAULT_SITE): str,
             vol.Optional(CONF_SOURCE, default=DEFAULT_SOURCE): str,
-            vol.Optional(CONF_INTERVAL, default=DEFAULT_INTERVAL): int,
         })
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
