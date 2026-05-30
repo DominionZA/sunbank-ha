@@ -8,6 +8,19 @@ CONF_SITE = "site"
 CONF_SOURCE = "source"
 CONF_INTERVAL = "interval"
 
+# Weather sensors the user authorises here in the integration (the integration owns identification;
+# the app just receives them already labelled). Each maps to a Sunbank environment.* metric.
+CONF_INDOOR_TEMP = "indoor_temp"
+CONF_INDOOR_HUM = "indoor_humidity"
+CONF_OUTDOOR_TEMP = "outdoor_temp"
+CONF_OUTDOOR_HUM = "outdoor_humidity"
+ENV_ROLE_METRIC = {
+    CONF_INDOOR_TEMP: "environment.indoor_temperature",
+    CONF_INDOOR_HUM: "environment.indoor_humidity",
+    CONF_OUTDOOR_TEMP: "environment.outdoor_temperature",
+    CONF_OUTDOOR_HUM: "environment.outdoor_humidity",
+}
+
 DEFAULT_BASE_URL = "http://localhost:8137"
 DEFAULT_SITE = "home"
 DEFAULT_SOURCE = "home_assistant"

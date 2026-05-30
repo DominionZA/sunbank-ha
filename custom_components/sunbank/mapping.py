@@ -20,6 +20,10 @@ COV: dict[str, tuple[float, float]] = {
     "battery.power":  (40, 2),
     "solar.pv_power": (40, 2),
     "load.power":     (40, 2),
+    "environment.indoor_temperature":  (0.3, 60),
+    "environment.indoor_humidity":     (1, 60),
+    "environment.outdoor_temperature": (0.3, 60),
+    "environment.outdoor_humidity":    (1, 60),
 }
 
 # Heartbeat: push the current value of every metric at least this often even when nothing changed,

@@ -8,7 +8,11 @@
           "base_url": "Sunbank server URL",
           "api_key": "API key",
           "site": "Site key",
-          "source": "Source name"
+          "source": "Source name",
+          "indoor_temp": "Indoor temperature sensor",
+          "indoor_humidity": "Indoor humidity sensor",
+          "outdoor_temp": "Outdoor temperature sensor",
+          "outdoor_humidity": "Outdoor humidity sensor"
         }
       }
     },

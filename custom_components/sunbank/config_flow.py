@@ -4,12 +4,17 @@ from __future__ import annotations
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_API_KEY, CONF_BASE_URL, CONF_SITE, CONF_SOURCE,
+    CONF_INDOOR_TEMP, CONF_INDOOR_HUM, CONF_OUTDOOR_TEMP, CONF_OUTDOOR_HUM,
     DEFAULT_BASE_URL, DEFAULT_SITE, DEFAULT_SOURCE, DOMAIN,
 )
+
+def _sensor(device_class):
+    return selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", device_class=device_class))
 
 
 async def _validate(hass, base_url: str, api_key: str) -> str | None:
@@ -48,5 +53,10 @@ class SunbankConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_API_KEY): str,
             vol.Optional(CONF_SITE, default=DEFAULT_SITE): str,
             vol.Optional(CONF_SOURCE, default=DEFAULT_SOURCE): str,
+            # You tell us which sensors are which; we publish them already labelled.
+            vol.Optional(CONF_INDOOR_TEMP): _sensor("temperature"),
+            vol.Optional(CONF_INDOOR_HUM): _sensor("humidity"),
+            vol.Optional(CONF_OUTDOOR_TEMP): _sensor("temperature"),
+            vol.Optional(CONF_OUTDOOR_HUM): _sensor("humidity"),
         })
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)

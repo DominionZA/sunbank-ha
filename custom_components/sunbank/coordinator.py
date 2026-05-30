@@ -33,9 +33,11 @@ def _to_float(state: str | None):
 class SunbankCoordinator(DataUpdateCoordinator):
     """Pushes mapped HA entities to Sunbank /v1/ingest: on change (real-time) + on a heartbeat."""
 
-    def __init__(self, hass: HomeAssistant, *, base_url, api_key, site, source, interval):
+    def __init__(self, hass: HomeAssistant, *, base_url, api_key, site, source, interval, extra=None):
         # The coordinator's polling IS the heartbeat (safety net); real-time comes from events.
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=interval))
+        # hard-coded inverter metrics + the weather sensors the user authorised (entity_id -> metric)
+        self._map = {**ENTITY_METRICS, **(extra or {})}
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._site = site
@@ -52,7 +54,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
     def async_start(self) -> None:
         """Subscribe to state changes for the mapped entities (near real-time)."""
         self._listen_cancel = async_track_state_change_event(
-            self.hass, list(ENTITY_METRICS.keys()), self._on_state_event)
+            self.hass, list(self._map.keys()), self._on_state_event)
 
     @callback
     def async_stop(self) -> None:
@@ -68,7 +70,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
     def _on_state_event(self, event: Event) -> None:
         entity_id = event.data.get("entity_id")
         new_state = event.data.get("new_state")
-        metric = ENTITY_METRICS.get(entity_id)
+        metric = self._map.get(entity_id)
         if metric is None or new_state is None:
             return
         value = _to_float(new_state.state)
@@ -107,7 +109,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         """Heartbeat: snapshot + push every mapped metric, so 'steady' != 'dead' and a fresh
         install sends immediately. Returns the status the diagnostic sensors render."""
         readings = []
-        for entity_id, metric in ENTITY_METRICS.items():
+        for entity_id, metric in self._map.items():
             st = self.hass.states.get(entity_id)
             if st is None or st.state in (None, "", "unknown", "unavailable"):
                 continue
