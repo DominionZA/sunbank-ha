@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sunbank",
+        "description": "Connect Home Assistant to your Sunbank account. Paste the API key from your Sunbank dashboard (Settings → API key).",
+        "data": {
+          "base_url": "Sunbank server URL",
+          "api_key": "API key",
+          "site": "Site key",
+          "source": "Source name",
+          "interval": "Push interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the Sunbank server at that URL.",
+      "invalid_auth": "That API key was rejected."
+    }
+  }
+}
