@@ -14,9 +14,10 @@ No secrets live in this repo — the API key is entered by each user at setup.
 
 ## How it shows up in HA
 
-There's no dashboard card or panel — that's deliberate. This is a **background uploader**:
-HA holds the sensors, the integration is the pipe, and the [Sunbank app](https://github.com/DominionZA/sunbank)
-is where you actually look. Once it's set up there's nothing to drive on the HA side.
+The integration is a **two-way bridge** over a single live WebSocket: it streams your sensor
+readings up to Sunbank, and Sunbank streams its computed **states and warnings back** — in real
+time, the instant they change. HA holds the raw sensors; Sunbank is the brain; the entities below
+are what it tells you. The richer dashboards live in the [Sunbank app](https://github.com/DominionZA/sunbank).
 
 You interact with it in two places:
 
@@ -28,13 +29,20 @@ Only the sensors you pick are sent — nothing is published by default.
 > If **Configure** doesn't show the four sensor pickers, you're on a pre-0.3.0 entry:
 > delete it and **Add Integration → Sunbank** to get the new form.
 
-**Its health sensors** — open the Sunbank device to see three diagnostic entities:
+**Its entities** — open the Sunbank device. Sunbank pushes these live (v0.4.0+):
 
-| Sensor | What it tells you |
-|--------|-------------------|
-| `Status` | `online` when the link is healthy, `error` if pushes are failing |
-| `Last upload` | timestamp of the most recent successful push |
-| `Readings sent` | running count of readings delivered |
+| Entity | What it is |
+|--------|------------|
+| `Home energy state` | `surplus` / `charging` / `solar_deficit` / `on_battery` — the whole-home posture |
+| `Battery` | usable battery % (inverter cutoff = 0%) |
+| `Runtime remaining` | hours until the house switches off at the current draw |
+| `Solar now` / `Load now` / `Battery flow` | live power in / used / into-or-out-of the battery |
+| `Home health` | 0–100 score; `Status message` | plain-English summary |
+| `Warning active` + one binary sensor per warning | `Power about to run out`, `Running low`, `Heavy load on a low battery`, `Battery low` |
 
-If `Status` is `online` and `Last upload` keeps ticking, it's working. Drop these onto a
-dashboard if you want an at-a-glance health check.
+The warning binary sensors flip on the moment Sunbank raises them — wire them to notifications or
+automations ("if *Power about to run out* → notify me / switch off the geyser"). Sunbank also fires
+a `sunbank_warning` event on the HA bus (`raised`/`cleared`) for event-style automations.
+
+Diagnostic entities (link health): `Status` (`live` = real-time socket up, `online` = REST
+fallback, `error` = not delivering), `Last upload`, `Readings sent`.

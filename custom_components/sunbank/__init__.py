@@ -11,7 +11,7 @@ from .const import (
 )
 from .coordinator import SunbankCoordinator
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -42,5 +42,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unloaded:
         coordinator = hass.data[DOMAIN].pop(entry.entry_id, None)
         if coordinator:
-            coordinator.async_stop()
+            await coordinator.async_close()
     return unloaded
