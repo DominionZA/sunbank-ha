@@ -2,23 +2,41 @@
   "config": {
     "step": {
       "user": {
-        "title": "Sunbank",
-        "description": "Connect Home Assistant to your Sunbank account. Data is sent in real time as your sensors change — there's nothing to schedule. Paste the API key from your Sunbank dashboard (Settings → Account).",
+        "title": "Connect to Sunbank",
+        "description": "Sunbank watches your solar setup and tells you how your power's doing — live, and with a heads-up before the battery runs low. Enter your Sunbank server's address and the key from the Sunbank app to link them up.",
         "data": {
-          "base_url": "Sunbank server URL",
+          "base_url": "Sunbank server address",
           "api_key": "API key",
-          "site": "Site key",
+          "site": "Site name",
           "source": "Source name",
-          "indoor_temp": "Indoor temperature sensor",
-          "indoor_humidity": "Indoor humidity sensor",
-          "outdoor_temp": "Outdoor temperature sensor",
-          "outdoor_humidity": "Outdoor humidity sensor"
+          "indoor_temp": "Indoor temperature sensor (optional)",
+          "indoor_humidity": "Indoor humidity sensor (optional)",
+          "outdoor_temp": "Outdoor temperature sensor (optional)",
+          "outdoor_humidity": "Outdoor humidity sensor (optional)"
+        },
+        "data_description": {
+          "base_url": "Where your Sunbank is running, for example http://192.168.1.50:8137",
+          "api_key": "Open the Sunbank app, go to Settings → Account, and copy the key shown there.",
+          "site": "Leave as-is unless you run more than one Sunbank.",
+          "source": "Leave as-is — it's just a label for where the data comes from.",
+          "indoor_temp": "Pick your indoor thermometer if you'd like Sunbank to show inside temperature.",
+          "outdoor_temp": "Pick your outdoor thermometer if you'd like Sunbank to show outside temperature."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sunbank needs your key again",
+        "description": "Sunbank ({server}) stopped accepting the current key — it was probably changed or revoked. Open the Sunbank app (Settings → Account), copy the new key, and paste it below to reconnect.",
+        "data": {
+          "api_key": "New API key"
         }
       }
     },
     "error": {
-      "cannot_connect": "Could not reach the Sunbank server at that URL.",
-      "invalid_auth": "That API key was rejected."
+      "cannot_connect": "Couldn't reach Sunbank at that address. Check the server is running and the address is right.",
+      "invalid_auth": "Sunbank didn't accept that key. Copy it again from the Sunbank app (Settings → Account)."
+    },
+    "abort": {
+      "reauth_successful": "Reconnected to Sunbank."
     }
   }
 }

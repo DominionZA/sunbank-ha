@@ -60,3 +60,29 @@ class SunbankConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_OUTDOOR_HUM): _sensor("humidity"),
         })
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+    # ---- reauth: HA calls this when the integration reports the key was rejected --------------
+    async def async_step_reauth(self, entry_data):
+        """Triggered by ConfigEntryAuthFailed — HA shows a 'needs attention' prompt."""
+        self._reauth_entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        """Ask for a fresh API key and, if it checks out, swap it in and reload — no re-adding."""
+        errors: dict[str, str] = {}
+        entry = self._reauth_entry
+        if user_input is not None:
+            err = await _validate(self.hass, entry.data[CONF_BASE_URL], user_input[CONF_API_KEY])
+            if err:
+                errors["base"] = err
+            else:
+                self.hass.config_entries.async_update_entry(
+                    entry, data={**entry.data, CONF_API_KEY: user_input[CONF_API_KEY]})
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            errors=errors,
+            description_placeholders={"server": entry.data[CONF_BASE_URL]},
+        )

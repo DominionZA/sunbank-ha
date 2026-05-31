@@ -3,6 +3,14 @@
 All notable changes to the Sunbank Home Assistant integration. These notes also
 appear as the update descriptions in HACS (they're published as GitHub Releases).
 
+## v0.5.0 — Tells you when something's wrong, and how to fix it
+
+The link used to fail quietly. Now Home Assistant tells you, and walks you through it.
+
+- **If your key stops working, HA asks for a new one.** Revoke or change the key in the Sunbank app and the integration gets a "needs attention" banner — click it, paste the new key, done. No deleting and re-adding.
+- **Honest connection status.** If Sunbank can't be reached, the integration shows as not running (and keeps retrying) instead of pretending everything's fine. When it's healthy, it shows healthy.
+- **A clearer setup screen.** Each box now explains itself — what the server address looks like, and exactly where to find your key in the Sunbank app — so a first-time setup doesn't leave you guessing.
+
 ## v0.4.1 — Sunbank looks like a real device now
 
 Before, Sunbank's bits were scattered around Home Assistant. Now they live together as one Sunbank device. Open it (Settings → Devices & Services → Sunbank) and you'll see what it is, which version you're on, and a link straight to your Sunbank dashboard — everything in one place.

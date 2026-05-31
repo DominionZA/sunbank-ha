@@ -15,9 +15,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN
 from .mapping import COV, ENTITY_METRICS
@@ -157,12 +158,19 @@ class SunbankCoordinator(DataUpdateCoordinator):
 
     # ---- heartbeat path (coordinator's interval poll) -----------------------
     async def _async_update_data(self) -> dict:
-        """Heartbeat: snapshot + push every mapped metric, so 'steady' != 'dead' and a fresh
-        install sends immediately. Returns the status the diagnostic sensors render."""
+        """Heartbeat + health probe. Re-sends current values over REST (which gives a definitive
+        status code), so Home Assistant's integration card honestly reflects the link: a 401 here
+        triggers HA's reauth prompt, a network failure marks it 'retrying'. Real-time changes still
+        go over the live socket; this is the periodic keep-alive that also proves the key/server."""
         readings = self._snapshot()
         if not readings:
             return self._status("no mapped entities available", ok=True)
-        return await self._deliver(readings)
+        status = await self._post(readings)
+        if status.get("auth_failed"):
+            raise ConfigEntryAuthFailed("Sunbank rejected the API key — re-enter it")
+        if not status["ok"]:
+            raise UpdateFailed(status["detail"])
+        return status
 
     def _snapshot(self) -> list[dict]:
         """Current value of every mapped entity (skipping unknowns), as readings."""
@@ -217,6 +225,8 @@ class SunbankCoordinator(DataUpdateCoordinator):
                 headers={"Authorization": f"Bearer {self._api_key}"},
             ) as resp:
                 body = await resp.json(content_type=None)
+                if resp.status == 401:
+                    return self._status("API key rejected", ok=False, auth_failed=True)
                 if resp.status != 200:
                     _LOGGER.warning("Sunbank ingest HTTP %s: %s", resp.status, body)
                     return self._status(f"ingest HTTP {resp.status}", ok=False)
@@ -227,8 +237,8 @@ class SunbankCoordinator(DataUpdateCoordinator):
             _LOGGER.warning("Sunbank push failed: %s", err)
             return self._status(f"push failed: {err}", ok=False)
 
-    def _status(self, detail: str, *, ok: bool) -> dict:
+    def _status(self, detail: str, *, ok: bool, auth_failed: bool = False) -> dict:
         return {
-            "ok": ok, "sent": self._total_sent, "last_upload": self._last_upload,
-            "detail": detail, "live": self.live_connected,
+            "ok": ok, "auth_failed": auth_failed, "sent": self._total_sent,
+            "last_upload": self._last_upload, "detail": detail, "live": self.live_connected,
         }
