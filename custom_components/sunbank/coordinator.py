@@ -54,6 +54,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         self._last_upload: str | None = None
 
         self.device_info = None                # set by __init__ so all entities group under one device
+        self.health: str | None = None         # Sunbank's overall health: green / yellow / red
 
         # downstream live state from Sunbank
         self.home: dict | None = None          # latest evaluated home state + warnings
@@ -162,6 +163,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         status code), so Home Assistant's integration card honestly reflects the link: a 401 here
         triggers HA's reauth prompt, a network failure marks it 'retrying'. Real-time changes still
         go over the live socket; this is the periodic keep-alive that also proves the key/server."""
+        await self._fetch_health()
         readings = self._snapshot()
         if not readings:
             return self._status("no mapped entities available", ok=True)
@@ -213,6 +215,21 @@ class SunbankCoordinator(DataUpdateCoordinator):
             self._last_upload = datetime.now(timezone.utc).isoformat()
             return self._status("ok (live)", ok=True)
         return await self._post(readings)
+
+    async def _fetch_health(self) -> None:
+        """Pull Sunbank's overall health (green/yellow/red) so HA can show a single 'all good'
+        indicator. Best-effort — a hiccup here never fails the heartbeat."""
+        session = async_get_clientsession(self.hass)
+        try:
+            async with session.get(
+                f"{self._base_url}/v1/connections",
+                headers={"Authorization": f"Bearer {self._api_key}"},
+            ) as resp:
+                if resp.status == 200:
+                    body = await resp.json(content_type=None)
+                    self.health = body.get("overall")
+        except Exception:  # noqa: BLE001
+            pass
 
     async def _post(self, readings: list[dict]) -> dict:
         session = async_get_clientsession(self.hass)

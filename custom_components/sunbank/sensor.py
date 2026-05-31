@@ -19,10 +19,17 @@ from .const import DOMAIN
 
 HOME_ENERGY_STATES = ["surplus", "charging", "solar_deficit", "on_battery"]
 
+# Sunbank's overall health (the same green/yellow/red as the app's pill) → a single dashboard
+# indicator. Plain words for the state, a matching icon so it reads at a glance.
+HEALTH_STATE = {"green": "healthy", "yellow": "needs_attention", "red": "offline"}
+HEALTH_ICON = {"healthy": "mdi:check-circle", "needs_attention": "mdi:alert-circle", "offline": "mdi:close-circle"}
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([
+        # headline: is everything OK?
+        SunbankHealthSensor(coordinator, entry),
         # live (the product)
         SunbankHomeEnergyStateSensor(coordinator, entry),
         SunbankLiveSensor(coordinator, entry, "battery_usable", "Battery", lambda h: h.get("battery", {}).get("usable_pct"),
@@ -62,6 +69,27 @@ class _LiveBase(_Base):
     @property
     def available(self) -> bool:
         return self.coordinator.home is not None
+
+
+class SunbankHealthSensor(_Base):
+    """Sunbank's overall health — one entity that's `healthy` only when every required connection is up."""
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["healthy", "needs_attention", "offline"]
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry, "health", "Sunbank health")
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.health is not None
+
+    @property
+    def native_value(self):
+        return HEALTH_STATE.get(self.coordinator.health)
+
+    @property
+    def icon(self):
+        return HEALTH_ICON.get(self.native_value, "mdi:help-circle")
 
 
 class SunbankHomeEnergyStateSensor(_LiveBase):

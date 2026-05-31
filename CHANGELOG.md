@@ -3,6 +3,10 @@
 All notable changes to the Sunbank Home Assistant integration. These notes also
 appear as the update descriptions in HACS (they're published as GitHub Releases).
 
+## v0.6.0 — One "everything's good" light for your dashboard
+
+Adds a single **Sunbank health** sensor that's `healthy` only when everything Sunbank needs is up and running — the same green/yellow/red you see in the app. Drop it on your Home Assistant dashboard and you've got one glance that tells you all's well (or that something needs a look).
+
 ## v0.5.0 — Tells you when something's wrong, and how to fix it
 
 The link used to fail quietly. Now Home Assistant tells you, and walks you through it.
