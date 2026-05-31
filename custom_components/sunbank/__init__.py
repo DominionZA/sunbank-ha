@@ -4,6 +4,8 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_API_KEY, CONF_BASE_URL, CONF_INTERVAL, CONF_SITE, CONF_SOURCE,
@@ -27,6 +29,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         source=data.get(CONF_SOURCE, DEFAULT_SOURCE),
         interval=data.get(CONF_INTERVAL, DEFAULT_INTERVAL),
         extra=extra,
+    )
+    # Group every entity under one "Sunbank" device, with the integration version and a link to the
+    # Sunbank dashboard — so HA's device page is a real hub: what it is, what version, where it lives.
+    integration = await async_get_integration(hass, DOMAIN)
+    coordinator.device_info = DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Sunbank",
+        manufacturer="Sunbank",
+        model="Home energy brain",
+        sw_version=str(integration.version),
+        configuration_url=data[CONF_BASE_URL],
     )
     await coordinator.async_config_entry_first_refresh()
     coordinator.async_start()  # subscribe to state changes for near-real-time pushes

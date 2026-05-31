@@ -52,6 +52,8 @@ class SunbankCoordinator(DataUpdateCoordinator):
         self._total_sent = 0
         self._last_upload: str | None = None
 
+        self.device_info = None                # set by __init__ so all entities group under one device
+
         # downstream live state from Sunbank
         self.home: dict | None = None          # latest evaluated home state + warnings
         self.live_connected = False            # is the WebSocket up?

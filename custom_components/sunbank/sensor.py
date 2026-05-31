@@ -52,6 +52,7 @@ class _Base(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_name = name
+        self._attr_device_info = coordinator.device_info
 
 
 # ---- live sensors -----------------------------------------------------------

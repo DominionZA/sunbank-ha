@@ -3,6 +3,13 @@
 All notable changes to the Sunbank Home Assistant integration. These notes also
 appear as the update descriptions in HACS (they're published as GitHub Releases).
 
+## v0.4.1 — A proper device page
+
+Sunbank now shows up as a real Home Assistant **device**, not a loose pile of entities.
+
+- **One Sunbank device** — every entity (live values + warnings + diagnostics) groups under it, with the **integration version**, manufacturer, and a **link to your Sunbank dashboard** right on the device page. Settings → Devices & Services → Sunbank → the device.
+- **Download diagnostics** — ⋮ → *Download diagnostics* gives a redacted snapshot: is the live socket connected, the last state Sunbank pushed, active warnings, and which HA sensors are mapped — so problems are easy to see and share.
+
 ## v0.4.0 — Real-time states & warnings, both ways
 
 Sunbank now talks back. One live connection carries your readings up *and* brings Sunbank's computed states and warnings back down — instantly, the moment they change.
