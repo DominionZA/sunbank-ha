@@ -3,21 +3,19 @@
 All notable changes to the Sunbank Home Assistant integration. These notes also
 appear as the update descriptions in HACS (they're published as GitHub Releases).
 
-## v0.4.1 — A proper device page
+## v0.4.1 — Sunbank looks like a real device now
 
-Sunbank now shows up as a real Home Assistant **device**, not a loose pile of entities.
+Before, Sunbank's bits were scattered around Home Assistant. Now they live together as one Sunbank device. Open it (Settings → Devices & Services → Sunbank) and you'll see what it is, which version you're on, and a link straight to your Sunbank dashboard — everything in one place.
 
-- **One Sunbank device** — every entity (live values + warnings + diagnostics) groups under it, with the **integration version**, manufacturer, and a **link to your Sunbank dashboard** right on the device page. Settings → Devices & Services → Sunbank → the device.
-- **Download diagnostics** — ⋮ → *Download diagnostics* gives a redacted snapshot: is the live socket connected, the last state Sunbank pushed, active warnings, and which HA sensors are mapped — so problems are easy to see and share.
+There's also a "Download diagnostics" button for when something's not right. It hands you a tidy summary — with your key hidden — that you can read or send on, instead of digging through logs.
 
-## v0.4.0 — Real-time states & warnings, both ways
+## v0.4.0 — Sunbank talks back now, in real time
 
-Sunbank now talks back. One live connection carries your readings up *and* brings Sunbank's computed states and warnings back down — instantly, the moment they change.
+Until now this just sent your data up to Sunbank. Now Sunbank sends its answers straight back, the moment things change — no waiting, no refreshing.
 
-- **New live entities** — `Home energy state`, `Battery`, `Runtime remaining`, `Solar now`, `Load now`, `Battery flow`, `Home health`, and a `Status message`. These are computed by Sunbank and pushed to HA, ready for dashboards and automations.
-- **Real-time warnings** — a binary sensor per alert (`Power about to run out`, `Running low`, `Heavy load on a low battery`, `Battery low`) plus a `Warning active` summary. They flip on the instant Sunbank raises them — wire them to a notification and you'll know *before* a heavy appliance drains the battery, not after.
-- **`sunbank_warning` events** — Sunbank fires an event on HA's bus when a warning is raised or cleared, for event-style automations.
-- **Faster, tougher link** — readings now stream over a live WebSocket (with automatic REST fallback if it drops, so nothing is lost). The `Status` sensor shows `live` when the real-time socket is up.
+- **Your home's status, live in Home Assistant** — battery level, how long it'll last, solar coming in, power being used, and a plain summary of how things are going. All kept current the instant anything changes.
+- **A heads-up before it's too late** — Sunbank tells you when power's about to run out, when you're getting low, or when something big is draining a low battery. Hook any of these up to a phone notification, and if someone switches on the kettle when the battery's nearly flat, you'll hear about it *now* — not once the lights are already off.
+- **A connection that looks after itself** — faster than before, and if it ever drops it quietly reconnects and catches up, so nothing slips through.
 
 ## v0.3.0 — Tell Sunbank about your indoor & outdoor sensors
 
