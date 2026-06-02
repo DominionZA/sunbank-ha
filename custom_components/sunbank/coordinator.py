@@ -82,6 +82,33 @@ class SunbankCoordinator(DataUpdateCoordinator):
             self._flush_cancel = None
         await self._ws.stop()
 
+    async def _async_sync_roles(self) -> None:
+        """Pull the user's device-role assignments from Sunbank (the single source of truth) and forward
+        those entities too. Means 'assign a sensor in the Sunbank dashboard' just works — no HA reconfig —
+        and a newly-assigned sensor starts streaming on the next heartbeat (we re-subscribe when it changes)."""
+        try:
+            session = async_get_clientsession(self.hass)
+            async with session.get(
+                f"{self._base_url}/v1/ingest/roles",
+                headers={"Authorization": f"Bearer {self._api_key}"},
+            ) as resp:
+                if resp.status != 200:
+                    return
+                data = await resp.json(content_type=None)
+        except Exception as err:  # noqa: BLE001 — role sync is best-effort; never break the heartbeat
+            _LOGGER.debug("Sunbank role sync failed: %s", err)
+            return
+        roles = (data or {}).get("roles") or {}
+        if not isinstance(roles, dict) or not roles:
+            return
+        before = set(self._map.keys())
+        self._map.update(roles)                       # assignments win for their entities
+        if set(self._map.keys()) != before and self._listen_cancel:
+            self._listen_cancel()                     # watched set changed → re-subscribe so new sensors stream live
+            self._listen_cancel = async_track_state_change_event(
+                self.hass, list(self._map.keys()), self._on_state_event)
+            _LOGGER.info("Sunbank: now forwarding %d entities (incl. assigned sensors)", len(self._map))
+
     # ---- downstream: live state + warnings from Sunbank ---------------------
     @callback
     def _on_home(self, home: dict) -> None:
@@ -163,6 +190,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         status code), so Home Assistant's integration card honestly reflects the link: a 401 here
         triggers HA's reauth prompt, a network failure marks it 'retrying'. Real-time changes still
         go over the live socket; this is the periodic keep-alive that also proves the key/server."""
+        await self._async_sync_roles()              # pick up Sunbank role assignments (runs on first refresh too)
         await self._fetch_health()
         readings = self._snapshot()
         if not readings:
