@@ -21,6 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = entry.data
     # the weather sensors the user authorised -> {entity_id: sunbank metric key}, published labelled
     extra = {data[c]: metric for c, metric in ENV_ROLE_METRIC.items() if data.get(c)}
+    integration = await async_get_integration(hass, DOMAIN)
     coordinator = SunbankCoordinator(
         hass,
         base_url=data[CONF_BASE_URL],
@@ -29,10 +30,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         source=data.get(CONF_SOURCE, DEFAULT_SOURCE),
         interval=data.get(CONF_INTERVAL, DEFAULT_INTERVAL),
         extra=extra,
+        version=str(integration.version),   # reported to Sunbank on every push (shown on the Connections page)
     )
     # Group every entity under one "Sunbank" device, with the integration version and a link to the
     # Sunbank dashboard — so HA's device page is a real hub: what it is, what version, where it lives.
-    integration = await async_get_integration(hass, DOMAIN)
     coordinator.device_info = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
         name="Sunbank",

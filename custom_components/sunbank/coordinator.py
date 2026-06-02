@@ -38,12 +38,13 @@ def _to_float(state: str | None):
 class SunbankCoordinator(DataUpdateCoordinator):
     """Streams mapped HA entities to Sunbank and receives live home state + warnings back."""
 
-    def __init__(self, hass: HomeAssistant, *, base_url, api_key, site, source, interval, extra=None):
+    def __init__(self, hass: HomeAssistant, *, base_url, api_key, site, source, interval, extra=None, version=None):
         # The coordinator's polling IS the heartbeat (safety net); real-time comes from events + the socket.
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=interval))
         self._map = {**ENTITY_METRICS, **(extra or {})}
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
+        self._version = version            # integration build, reported to Sunbank for troubleshooting
         self._site = site
         self._source = source
         self._sent: dict[str, tuple[float, float]] = {}  # metric -> (last_value, last_sent_monotonic)
@@ -262,7 +263,8 @@ class SunbankCoordinator(DataUpdateCoordinator):
     async def _post(self, readings: list[dict]) -> dict:
         session = async_get_clientsession(self.hass)
         # 'agent' marks this as the integration source so Sunbank can enforce a single active source.
-        payload = {"site": self._site, "source": self._source, "agent": "integration", "readings": readings}
+        payload = {"site": self._site, "source": self._source, "agent": "integration",
+                   "agent_version": self._version, "readings": readings}
         try:
             async with session.post(
                 f"{self._base_url}/v1/ingest",

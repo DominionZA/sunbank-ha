@@ -1,7 +1,7 @@
 {
   "domain": "sunbank",
   "name": "Sunbank",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "documentation": "https://github.com/DominionZA/sunbank-ha",
   "issue_tracker": "https://github.com/DominionZA/sunbank-ha/issues",
   "codeowners": ["@DominionZA"],
