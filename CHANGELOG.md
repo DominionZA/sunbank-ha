@@ -3,6 +3,23 @@
 All notable changes to the Sunbank Home Assistant integration. These notes also
 appear as the update descriptions in HACS (they're published as GitHub Releases).
 
+## v0.9.0 — Keeps an eye on your mains, and tells you when the battery's full
+
+Two additions:
+
+- **Mains tracking.** Now that the cold's had some of us switching the grid back on, Sunbank watches it: how much you're pulling from the mains, and whether you're on the grid or running fully off it. It's recorded the moment it changes, so there's a proper history of when you were on mains and when you weren't.
+- **A "battery full at" time.** A new sensor showing when Sunbank expects the battery to be full — the same time the app works out, so Home Assistant and the dashboard always agree. Put it on a card, or trigger something off it.
+
+No setup changes — update and restart.
+
+## v0.8.0 — Sunbank shows which version you're running
+
+The integration now tells Sunbank its version on every update, so the Connections page shows exactly which build is running and when it last checked in — handy if anything ever needs troubleshooting. No setup changes.
+
+## v0.7.0 — Use the sensors you picked in Sunbank, live
+
+Assign a sensor to a job in the Sunbank dashboard (outdoor temperature, indoor humidity, and so on) and the integration now picks it up automatically and streams it live — no need to set anything up again here in Home Assistant. Change the assignment in Sunbank and it follows within a minute. Your inverter feed is unchanged.
+
 ## v0.6.0 — One "everything's good" light for your dashboard
 
 Adds a single **Sunbank health** sensor that's `healthy` only when everything Sunbank needs is up and running — the same green/yellow/red you see in the app. Drop it on your Home Assistant dashboard and you've got one glance that tells you all's well (or that something needs a look).
