@@ -29,6 +29,14 @@ FLUSH_DELAY = 2.0  # seconds — micro-batch window after a change, so simultane
 
 
 def _to_float(state: str | None):
+    # binary_sensor / switch states come through as on/off — carry them as 1/0 so a grid (or any
+    # on/off) entity can be mapped to a numeric metric and recorded like everything else.
+    if isinstance(state, str):
+        s = state.strip().lower()
+        if s in ("on", "true", "open", "home"):
+            return 1.0
+        if s in ("off", "false", "closed", "away"):
+            return 0.0
     try:
         return float(state)
     except (TypeError, ValueError):

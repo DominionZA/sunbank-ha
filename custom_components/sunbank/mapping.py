@@ -9,6 +9,11 @@ ENTITY_METRICS: dict[str, str] = {
     "sensor.inverter_battery_power": "battery.power",
     "sensor.inverter_pv_power": "solar.pv_power",
     "sensor.inverter_load_power": "load.power",
+    # Grid / mains — power drawn from (or fed to) the grid, and a clean on/off state. Knowing the grid
+    # is on changes everything downstream (solar stops being the only source), and the on/off history is
+    # what lets us measure off-grid streaks. binary_sensor 'on'/'off' is sent as 1/0 (see _to_float).
+    "sensor.inverter_grid_power": "grid.power",
+    "binary_sensor.inverter_grid": "grid.connected",
 }
 
 # Change-of-value tuning per metric: (deadband, throttle_seconds).
@@ -20,6 +25,8 @@ COV: dict[str, tuple[float, float]] = {
     "battery.power":  (40, 2),
     "solar.pv_power": (40, 2),
     "load.power":     (40, 2),
+    "grid.power":     (40, 2),
+    "grid.connected": (0.5, 0),   # any on↔off flip sends immediately — the transition is the event
     "environment.indoor_temperature":  (0.3, 60),
     "environment.indoor_humidity":     (1, 60),
     "environment.outdoor_temperature": (0.3, 60),
