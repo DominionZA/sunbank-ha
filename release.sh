@@ -14,6 +14,11 @@ cd "$(dirname "$0")"
 
 VERSION=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' custom_components/sunbank/manifest.json | sed -E 's/.*"([^"]+)"$/\1/')
 TAG="v${VERSION}"
+GH_ACCOUNT=$(git config --get github.user || echo DominionZA)
+
+# This machine has multiple GitHub accounts. Make the repo declare which one owns releases so
+# gh never guesses based on whichever account happened to be active globally.
+gh auth switch -h github.com -u "$GH_ACCOUNT" >/dev/null
 
 # The changelog section for this version: from its "## v<version>" heading to the next "## ".
 NOTES=$(awk -v tag="## ${TAG} " '
