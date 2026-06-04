@@ -3,6 +3,12 @@
 All notable changes to the Sunbank Home Assistant integration. These notes also
 appear as the update descriptions in HACS (they're published as GitHub Releases).
 
+## v0.9.1 — Uses the source Push key
+
+Sunbank now has one ingest source per integration, so this integration validates and uses the
+Home Assistant source **Push key** from Sunbank → Integrations. The Account key is no longer accepted
+in setup; if Home Assistant asks you to reauth, paste the Push key from the Home Assistant integration card.
+
 ## v0.9.0 — Keeps an eye on your mains, and tells you when the battery's full
 
 Two additions:

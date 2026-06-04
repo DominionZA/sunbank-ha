@@ -1,4 +1,4 @@
-"""Config flow for Sunbank — asks for the server URL and the account API key."""
+"""Config flow for Sunbank — asks for the server URL and the source Push key."""
 from __future__ import annotations
 
 import voluptuous as vol
@@ -8,9 +8,9 @@ from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
-    CONF_API_KEY, CONF_BASE_URL, CONF_SITE, CONF_SOURCE,
+    CONF_API_KEY, CONF_BASE_URL, CONF_SITE,
     CONF_INDOOR_TEMP, CONF_INDOOR_HUM, CONF_OUTDOOR_TEMP, CONF_OUTDOOR_HUM,
-    DEFAULT_BASE_URL, DEFAULT_SITE, DEFAULT_SOURCE, DOMAIN,
+    DEFAULT_BASE_URL, DEFAULT_SITE, DOMAIN,
 )
 
 def _sensor(device_class):
@@ -18,15 +18,18 @@ def _sensor(device_class):
 
 
 async def _validate(hass, base_url: str, api_key: str) -> str | None:
-    """Return an error key, or None if the server + key check out."""
+    """Return an error key, or None if the server + Push key check out."""
     session = async_get_clientsession(hass)
-    url = base_url.rstrip("/") + "/v1/account"
+    url = base_url.rstrip("/") + "/v1/ingest/whoami"
     try:
         async with session.get(url, headers={"Authorization": f"Bearer {api_key}"}) as resp:
             if resp.status == 401:
                 return "invalid_auth"
             if resp.status != 200:
                 return "cannot_connect"
+            data = await resp.json(content_type=None)
+            if not data.get("source_scoped"):
+                return "not_push_key"
     except Exception:  # noqa: BLE001 — any network failure is "cannot connect"
         return "cannot_connect"
     return None
@@ -52,7 +55,6 @@ class SunbankConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_BASE_URL, default=DEFAULT_BASE_URL): str,
             vol.Required(CONF_API_KEY): str,
             vol.Optional(CONF_SITE, default=DEFAULT_SITE): str,
-            vol.Optional(CONF_SOURCE, default=DEFAULT_SOURCE): str,
             # You tell us which sensors are which; we publish them already labelled.
             vol.Optional(CONF_INDOOR_TEMP): _sensor("temperature"),
             vol.Optional(CONF_INDOOR_HUM): _sensor("humidity"),

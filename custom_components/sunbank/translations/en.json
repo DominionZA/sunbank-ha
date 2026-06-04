@@ -3,12 +3,11 @@
     "step": {
       "user": {
         "title": "Connect to Sunbank",
-        "description": "Sunbank watches your solar setup and tells you how your power's doing — live, and with a heads-up before the battery runs low. Enter your Sunbank server's address and the key from the Sunbank app to link them up.",
+        "description": "Sunbank watches your solar setup and tells you how your power's doing — live, and with a heads-up before the battery runs low. Enter your Sunbank server's address and this source's Push key from the Sunbank app to link them up.",
         "data": {
           "base_url": "Sunbank server address",
-          "api_key": "API key",
+          "api_key": "Push key",
           "site": "Site name",
-          "source": "Source name",
           "indoor_temp": "Indoor temperature sensor (optional)",
           "indoor_humidity": "Indoor humidity sensor (optional)",
           "outdoor_temp": "Outdoor temperature sensor (optional)",
@@ -16,24 +15,24 @@
         },
         "data_description": {
           "base_url": "Where your Sunbank is running, for example http://192.168.1.50:8137",
-          "api_key": "Open the Sunbank app, go to Settings → Account, and copy the key shown there.",
+          "api_key": "Open Sunbank → Integrations → Home Assistant integration, then copy that card's Push key. Do not use the Account key.",
           "site": "Leave as-is unless you run more than one Sunbank.",
-          "source": "Leave as-is — it's just a label for where the data comes from.",
           "indoor_temp": "Pick your indoor thermometer if you'd like Sunbank to show inside temperature.",
           "outdoor_temp": "Pick your outdoor thermometer if you'd like Sunbank to show outside temperature."
         }
       },
       "reauth_confirm": {
         "title": "Sunbank needs your key again",
-        "description": "Sunbank ({server}) stopped accepting the current key — it was probably changed or revoked. Open the Sunbank app (Settings → Account), copy the new key, and paste it below to reconnect.",
+        "description": "Sunbank ({server}) stopped accepting the current Push key — it was probably changed or revoked. Open Sunbank → Integrations, copy this Home Assistant source's Push key, and paste it below to reconnect.",
         "data": {
-          "api_key": "New API key"
+          "api_key": "New Push key"
         }
       }
     },
     "error": {
       "cannot_connect": "Couldn't reach Sunbank at that address. Check the server is running and the address is right.",
-      "invalid_auth": "Sunbank didn't accept that key. Copy it again from the Sunbank app (Settings → Account)."
+      "invalid_auth": "Sunbank didn't accept that key. Copy it again from the Home Assistant integration card in Sunbank → Integrations.",
+      "not_push_key": "That is the Account key. Use the Home Assistant integration card's Push key instead."
     },
     "abort": {
       "reauth_successful": "Reconnected to Sunbank."

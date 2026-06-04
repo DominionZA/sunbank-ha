@@ -147,7 +147,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         if readings:
             await self._ws.send({
                 "type": "readings", "site": self._site, "source": self._source,
-                "agent": "integration", "readings": readings,
+                "agent": "integration", "agent_version": self._version, "readings": readings,
             })
 
     @property
@@ -245,7 +245,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         """Send over the live socket if it's up; otherwise fall back to REST so nothing is lost."""
         sent_live = await self._ws.send({
             "type": "readings", "site": self._site, "source": self._source,
-            "agent": "integration", "readings": readings,
+            "agent": "integration", "agent_version": self._version, "readings": readings,
         })
         if sent_live:
             self._total_sent += len(readings)
@@ -254,17 +254,19 @@ class SunbankCoordinator(DataUpdateCoordinator):
         return await self._post(readings)
 
     async def _fetch_health(self) -> None:
-        """Pull Sunbank's overall health (green/yellow/red) so HA can show a single 'all good'
-        indicator. Best-effort — a hiccup here never fails the heartbeat."""
+        """Check that Sunbank still accepts this source Push key.
+        Best-effort — the heartbeat POST below remains the authoritative delivery check."""
         session = async_get_clientsession(self.hass)
         try:
             async with session.get(
-                f"{self._base_url}/v1/connections",
+                f"{self._base_url}/v1/ingest/whoami",
                 headers={"Authorization": f"Bearer {self._api_key}"},
             ) as resp:
                 if resp.status == 200:
                     body = await resp.json(content_type=None)
-                    self.health = body.get("overall")
+                    self.health = "green" if body.get("source_scoped") else "yellow"
+                elif resp.status == 401:
+                    self.health = "red"
         except Exception:  # noqa: BLE001
             pass
 
