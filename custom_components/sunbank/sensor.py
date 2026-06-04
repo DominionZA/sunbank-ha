@@ -45,6 +45,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         SunbankLiveSensor(coordinator, entry, "health", "Home health", lambda h: h.get("health"),
                           state_class=SensorStateClass.MEASUREMENT, icon="mdi:heart-pulse"),
         SunbankLiveSensor(coordinator, entry, "message", "Status message", lambda h: h.get("message"), icon="mdi:message-text"),
+        # time-to-full — Sunbank's single, sun-aware value. Read THIS; never recompute from soc + power.
+        SunbankFullAtSensor(coordinator, entry),
         # diagnostics (link health)
         SunbankStatusSensor(coordinator, entry),
         SunbankLastUploadSensor(coordinator, entry),
@@ -126,6 +128,37 @@ class SunbankLiveSensor(_LiveBase):
     @property
     def native_value(self):
         return self._getter(self.coordinator.home or {})
+
+
+class SunbankFullAtSensor(_LiveBase):
+    """When the battery is forecast to reach full today — Sunbank's single, sun-aware value.
+
+    Read this instead of computing "time to full" from state-of-charge ÷ charge rate: that ignores the
+    sun climbing through the day and gives wrong answers (e.g. "14h" when the forecast says it fills by
+    mid-afternoon). Unknown when the battery won't fill before sundown — the attributes then carry the
+    projected peak so a card can show "tops out ~X%".
+    """
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:battery-charging-100"
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator, entry, "full_at", "Full at")
+
+    @property
+    def native_value(self):
+        ts = (self.coordinator.home or {}).get("charge_full_at")
+        return dt_util.parse_datetime(ts) if ts else None
+
+    @property
+    def extra_state_attributes(self):
+        h = self.coordinator.home or {}
+        c = h.get("charge") or {}
+        return {
+            "hours_to_full": h.get("charge_full_h"),
+            "reaches_full_today": c.get("reaches_full"),
+            "peak_pct_by_sundown": c.get("peak_pct"),
+            "sunset_at": c.get("sunset_at"),
+        }
 
 
 # ---- diagnostics ------------------------------------------------------------
