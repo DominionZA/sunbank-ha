@@ -16,9 +16,9 @@ VERSION=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' custom_components
 TAG="v${VERSION}"
 GH_ACCOUNT=$(git config --get github.user || echo DominionZA)
 
-# This machine has multiple GitHub accounts. Make the repo declare which one owns releases so
-# gh never guesses based on whichever account happened to be active globally.
-gh auth switch -h github.com -u "$GH_ACCOUNT" >/dev/null
+# This machine has multiple GitHub accounts. Make the repo declare which one owns releases and
+# feed gh that account's token directly, without changing the global active gh account.
+export GH_TOKEN="$(gh auth token -h github.com -u "$GH_ACCOUNT")"
 
 # The changelog section for this version: from its "## v<version>" heading to the next "## ".
 NOTES=$(awk -v tag="## ${TAG} " '
