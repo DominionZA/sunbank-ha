@@ -28,6 +28,18 @@ _LOGGER = logging.getLogger(__name__)
 FLUSH_DELAY = 2.0  # seconds — micro-batch window after a change, so simultaneous changes go in one push
 
 
+def _generic_metric(signal: dict) -> str | None:
+    device_class = signal.get("device_class")
+    if device_class == "temperature":
+        return "environment.temperature"
+    if device_class == "humidity":
+        return "environment.humidity"
+    if device_class:
+        safe = "".join(ch.lower() if ch.isalnum() or ch == "_" else "_" for ch in str(device_class))
+        return f"device.{safe}"
+    return None
+
+
 def _to_float(state: str | None):
     # binary_sensor / switch states come through as on/off — carry them as 1/0 so a grid (or any
     # on/off) entity can be mapped to a numeric metric and recorded like everything else.
@@ -49,7 +61,8 @@ class SunbankCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, *, base_url, api_key, site, source, interval, extra=None, version=None):
         # The coordinator's polling IS the heartbeat (safety net); real-time comes from events + the socket.
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=interval))
-        self._map = {**ENTITY_METRICS, **(extra or {})}
+        self._fallback_map = {**ENTITY_METRICS, **(extra or {})}
+        self._map: dict[str, str] = {}
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._version = version            # integration build, reported to Sunbank for troubleshooting
@@ -71,15 +84,14 @@ class SunbankCoordinator(DataUpdateCoordinator):
         self._active_warn: set[str] = set()
         self._ws = SunbankWSClient(
             hass, base_url, api_key,
-            on_home=self._on_home, on_connect=self._on_ws_connect, on_status=self._on_ws_status,
+            on_home=self._on_home, on_policy=self._async_sync_policy,
+            on_connect=self._on_ws_connect, on_status=self._on_ws_status,
         )
 
     # ---- lifecycle ----------------------------------------------------------
     @callback
     def async_start(self) -> None:
         """Subscribe to state changes (near real-time) and open the live socket."""
-        self._listen_cancel = async_track_state_change_event(
-            self.hass, list(self._map.keys()), self._on_state_event)
         self._ws.start()
 
     async def async_close(self) -> None:
@@ -91,32 +103,42 @@ class SunbankCoordinator(DataUpdateCoordinator):
             self._flush_cancel = None
         await self._ws.stop()
 
-    async def _async_sync_roles(self) -> None:
-        """Pull the user's device-role assignments from Sunbank (the single source of truth) and forward
-        those entities too. Means 'assign a sensor in the Sunbank dashboard' just works — no HA reconfig —
-        and a newly-assigned sensor starts streaming on the next heartbeat (we re-subscribe when it changes)."""
+    async def _async_sync_policy(self) -> None:
+        """Pull Sunbank's collection policy and watch only the enabled entities."""
         try:
             session = async_get_clientsession(self.hass)
             async with session.get(
-                f"{self._base_url}/v1/ingest/roles",
+                f"{self._base_url}/v1/ingest/policy",
                 headers={"Authorization": f"Bearer {self._api_key}"},
             ) as resp:
                 if resp.status != 200:
                     return
                 data = await resp.json(content_type=None)
-        except Exception as err:  # noqa: BLE001 — role sync is best-effort; never break the heartbeat
-            _LOGGER.debug("Sunbank role sync failed: %s", err)
+        except Exception as err:  # noqa: BLE001 — policy sync is best-effort; never break the heartbeat
+            _LOGGER.debug("Sunbank policy sync failed: %s", err)
             return
-        roles = (data or {}).get("roles") or {}
-        if not isinstance(roles, dict) or not roles:
+        signals = (data or {}).get("signals") or []
+        if not isinstance(signals, list):
             return
+        roles = {r.get("entity_id"): r.get("metric") for r in ((data or {}).get("roles") or []) if r.get("entity_id") and r.get("metric")}
+        next_map: dict[str, str] = {}
+        for sig in signals:
+            if not isinstance(sig, dict):
+                continue
+            entity_id = sig.get("entity_id")
+            if not entity_id:
+                continue
+            metric = roles.get(entity_id) or self._fallback_map.get(entity_id) or _generic_metric(sig)
+            if metric:
+                next_map[entity_id] = metric
         before = set(self._map.keys())
-        self._map.update(roles)                       # assignments win for their entities
-        if set(self._map.keys()) != before and self._listen_cancel:
-            self._listen_cancel()                     # watched set changed → re-subscribe so new sensors stream live
+        self._map = next_map
+        if set(self._map.keys()) != before:
+            if self._listen_cancel:
+                self._listen_cancel()
             self._listen_cancel = async_track_state_change_event(
-                self.hass, list(self._map.keys()), self._on_state_event)
-            _LOGGER.info("Sunbank: now forwarding %d entities (incl. assigned sensors)", len(self._map))
+                self.hass, list(self._map.keys()), self._on_state_event) if self._map else None
+            _LOGGER.info("Sunbank: now forwarding %d enabled entities", len(self._map))
 
     # ---- downstream: live state + warnings from Sunbank ---------------------
     @callback
@@ -143,6 +165,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
 
     async def _on_ws_connect(self) -> None:
         """On (re)connect, push a full snapshot so Sunbank has current values immediately."""
+        await self._async_sync_policy()
         readings = self._snapshot()
         if readings:
             await self._ws.send({
@@ -199,7 +222,7 @@ class SunbankCoordinator(DataUpdateCoordinator):
         status code), so Home Assistant's integration card honestly reflects the link: a 401 here
         triggers HA's reauth prompt, a network failure marks it 'retrying'. Real-time changes still
         go over the live socket; this is the periodic keep-alive that also proves the key/server."""
-        await self._async_sync_roles()              # pick up Sunbank role assignments (runs on first refresh too)
+        await self._async_sync_policy()             # pick up Sunbank's enabled device/signal list
         await self._fetch_health()
         readings = self._snapshot()
         if not readings:

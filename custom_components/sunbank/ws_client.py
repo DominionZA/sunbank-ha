@@ -42,6 +42,7 @@ class SunbankWSClient:
         api_key: str,
         *,
         on_home: Callable[[dict], None] | None = None,
+        on_policy: Callable[[], Awaitable[None]] | None = None,
         on_connect: Callable[[], Awaitable[None]] | None = None,
         on_status: Callable[[bool], None] | None = None,
     ) -> None:
@@ -49,6 +50,7 @@ class SunbankWSClient:
         self._url = _ws_url(base_url)
         self._api_key = api_key
         self._on_home = on_home
+        self._on_policy = on_policy
         self._on_connect = on_connect
         self._on_status = on_status
         self._ws: aiohttp.ClientWebSocketResponse | None = None
@@ -127,3 +129,5 @@ class SunbankWSClient:
             return
         if msg.get("type") == "home" and self._on_home:
             self._on_home(msg)
+        elif msg.get("type") == "policy_updated" and self._on_policy:
+            self.hass.async_create_background_task(self._on_policy(), "sunbank_policy_sync")
