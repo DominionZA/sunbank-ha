@@ -13,7 +13,9 @@ ENTITY_METRICS: dict[str, str] = {
     # is on changes everything downstream (solar stops being the only source), and the on/off history is
     # what lets us measure off-grid streaks. binary_sensor 'on'/'off' is sent as 1/0 (see _to_float).
     "sensor.inverter_grid_power": "grid.power",
-    "binary_sensor.inverter_grid": "grid.connected",
+    # This is the user-controlled grid supply state. The Solarman binary_sensor.inverter_grid only
+    # reports inverter-side grid presence and can remain "on" while the house is intentionally off-grid.
+    "input_boolean.grid_supply": "grid.connected",
 }
 
 # Change-of-value tuning per metric: (deadband, throttle_seconds).

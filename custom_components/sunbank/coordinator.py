@@ -121,7 +121,14 @@ class SunbankCoordinator(DataUpdateCoordinator):
         if not isinstance(signals, list):
             return
         roles = {r.get("entity_id"): r.get("metric") for r in ((data or {}).get("roles") or []) if r.get("entity_id") and r.get("metric")}
-        next_map: dict[str, str] = {}
+        # Defaults configured in the integration are first-class mappings. The server policy can add
+        # discovered entities/role overrides, but core mapped values should not disappear just because
+        # the server has not registered the HA entity yet.
+        next_map: dict[str, str] = {
+            entity_id: metric
+            for entity_id, metric in self._fallback_map.items()
+            if self.hass.states.get(entity_id) is not None
+        }
         for sig in signals:
             if not isinstance(sig, dict):
                 continue
