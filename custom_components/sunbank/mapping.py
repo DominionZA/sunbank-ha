@@ -13,8 +13,12 @@ ENTITY_METRICS: dict[str, str] = {
     # is on changes everything downstream (solar stops being the only source), and the on/off history is
     # what lets us measure off-grid streaks. binary_sensor 'on'/'off' is sent as 1/0 (see _to_float).
     "sensor.inverter_grid_power": "grid.power",
-    # This is the user-controlled grid supply state. The Solarman binary_sensor.inverter_grid only
-    # reports inverter-side grid presence and can remain "on" while the house is intentionally off-grid.
+    # BOOTSTRAP DEFAULT ONLY: this must become user-configurable in Sunbank's mapping UI. The product
+    # contract is the Sunbank metric key (grid.connected), not this HA entity_id. This local helper is
+    # Michael's current source of truth for grid supply; other homes may use a template, switch, helper,
+    # Homey flow, direct inverter register, etc. The adapter maps that local truth into grid.connected.
+    # The Solarman binary_sensor.inverter_grid reports inverter-side grid presence and can remain "on"
+    # while the house is intentionally off-grid.
     "input_boolean.grid_supply": "grid.connected",
 }
 
